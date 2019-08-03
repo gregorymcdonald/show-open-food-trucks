@@ -6,8 +6,11 @@
 
 import requests
 
-url = "http://data.sfgov.org/resource/bbb8-hzi6.json"
+if __name__ == '__main__':
+    print('Hello World!')
 
-response = requests.get(url)
-if response.status_code == 200:
-    data = response.json()
+    url = "http://data.sfgov.org/resource/bbb8-hzi6.json"
+
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
