@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-
-# Make sure to install requests before running:
-# > pip install requests
-# Documentation for the requests library can be found here: http://docs.python-requests.org/en/master/
-
 import requests
 import sys
 from datetime import datetime, time
@@ -68,28 +62,33 @@ def main() -> None:
     The entry point of the program if this module is executed.
     """
     try:
-        # Load the food truck data.
+        # Load ALL food trucks.
         food_trucks = get_food_trucks()
     except:
         print('An error occurred loading food truck data. Program will now exit.', flush=True)
         sys.exit(1)
    
-    # Sort the food trucks alphabetically by name.
-    food_trucks.sort(key=lambda f: f.name)
-
-    # Print the current time.
+    # Get all food trucks that are open at the current time.
     current_time = datetime.now()
-    current_time_str = current_time.strftime('%A %H:%M')
-    print(f'The current time is {current_time_str}.', flush=True)
+    open_food_trucks = [f for f in food_trucks if f.is_open(current_time)]
 
-    num_displayed_food_trucks = 0
-    for food_truck in food_trucks:
-        if food_truck.is_open(current_time):
-            print(food_truck)
-            num_displayed_food_trucks += 1
-            if (num_displayed_food_trucks == 10):
-                input("Press any key to continue...")
-                num_displayed_food_trucks = 0
+    # Handle the case where there are no open food trucks.
+    if len(open_food_trucks) == 0:
+        print('There are currently no open food trucks.', flush=True)
+        sys.exit(0)
+
+    # Sort the food trucks alphabetically by name.
+    open_food_trucks.sort(key=lambda f: f.name)
+
+    # Print food trucks in groups of 10.
+    current_food_truck_index = 0
+    while current_food_truck_index < len(open_food_trucks):
+        print(open_food_trucks[current_food_truck_index])
+        current_food_truck_index += 1
+
+        # After 10 food trucks are printed, block until the user presses Enter.
+        if current_food_truck_index % 10 == 0:
+            input('Press Enter to view more food trucks...')
 
 
 if __name__ == '__main__':
