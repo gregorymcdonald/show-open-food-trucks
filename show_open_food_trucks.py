@@ -1,22 +1,45 @@
 import requests
 import sys
 from datetime import datetime, time
+from typing import List
 
-class MobileFoodScheduleEntry:
+class FoodTruck:
     """
-    Class representing an entry in the mobile food schedule.
+    Class representing a food truck at a specific location and time, 
+    i.e. an entry in the mobile food schedule.
+
+    Attributes:
+        address     the location of the food truck, e.g. '3119 ALEMANY BLVD'.
+        name        the name of the food truck, e.g. 'San Pancho's Tacos'.
+        dayOfWeek   the day of the week the food truck is open, e.g. 'Tuesday'.
+        openTime    the time that the food truck first opens, e.g. '15:00'.
+        closeTime   the time that the food truck closes, e.g. '23:00'.
     """
 
-    def __init__(self, address: str, name: str, dayOfWeek: str, startTime: str, endTime: str):
-        self.address = address # type: str
-        self.name = name # type: str
-        self.dayOfWeek = dayOfWeek # type: str
-        self.startTime = startTime # type: str
-        self.endTime = endTime # type: str
+    def __init__(self, address: str, name: str, dayOfWeek: str, openTime: str, closeTime: str):
+        self.address = address      # type: str
+        self.name = name            # type: str
+        self.dayOfWeek = dayOfWeek  # type: str
+        self.openTime = openTime    # type: str
+        self.closeTime = closeTime  # type: str
+
+    @classmethod
+    def from_json(cls, json):
+        """
+        Create a food truck from the specified JSON object.
+        :return: A FoodTruck if the specified JSON object is well-formed; otherwise, None.
+        """
+        # Get all fields from the input JSON.
+        address = json['location']
+        foodTruckName = json['applicant']
+        dayOfWeek = json['dayofweekstr']
+        openTime = json['start24']
+        closeTime = json['end24']
+        return cls(address, foodTruckName, dayOfWeek, openTime, closeTime)
 
     def __str__(self):
         """
-        Returns the string representation of this mobile food schedule entry.
+        Returns the string representation of this food truck.
         """
         return f'{self.name} {self.address}'
 
@@ -26,34 +49,42 @@ class MobileFoodScheduleEntry:
         at the specified datetime. Returns False if this mobile food schedule entry is
         closed at the specified datetime.
         """
-        start_hour = int(self.startTime[0:2])
-        start_minute = int(self.startTime[3:])
-        end_hour = int(self.endTime[0:2])
-        end_minute = int(self.endTime[3:])
-        return date.strftime('%A') == self.dayOfWeek \
-               and (date.hour > start_hour or (date.hour == start_hour and date.minute >= start_minute)) \
-               and (date.hour < end_hour or (date.hour == end_hour and date.minute <= end_minute))
+        # Parses the hours and minutes component from the open and close times.
+        open_hour = int(self.openTime[0:2])
+        open_minute = int(self.openTime[3:])
+        close_hour = int(self.closeTime[0:2])
+        close_minute = int(self.closeTime[3:])
+
+        # True if the specified date is on the same day as this food truck's schedule.
+        sameDay = date.strftime('%A') == self.dayOfWeek
+        # True if the specified time is at or after the food truck's open.
+        afterOpen = date.hour > open_hour or (date.hour == open_hour and date.minute >= open_minute)
+        # True if the specified time is at or before the food truck's close.
+        beforeClose = date.hour < close_hour or (date.hour == close_hour and date.minute <= close_minute)
+        return sameDay and afterOpen and beforeClose
 
 
-def create_food_truck_from_json(json):
-    address = json['location']
-    foodTruckName = json['applicant']
-    dayOfWeek = json['dayofweekstr']
-    return MobileFoodScheduleEntry(address, foodTruckName, dayOfWeek, json['start24'], json['end24'])
-
-
-def get_food_trucks():
+def get_food_trucks() -> List[FoodTruck]:
+    """
+    Returns all food truck mobile food schedule entries.
+    """
+    # Issues a GET request to DataSF government mobile food schedule dataset.
     datasf_mobile_food_schedule_url = "http://data.sfgov.org/resource/bbb8-hzi6.json"
     mobile_food_schedule_response = requests.get(datasf_mobile_food_schedule_url)
+
     if mobile_food_schedule_response.status_code == 200:
+        # Get the response data as JSON.
         mobile_food_schedule_json = mobile_food_schedule_response.json()
+
+        # Iterate through the JSON data and create a food truck for each entry.
         food_trucks = []
-        for i in range(0, len(mobile_food_schedule_json)):
-            food_truck = create_food_truck_from_json(mobile_food_schedule_json[i])
+        for entry in mobile_food_schedule_json:
+            food_truck = FoodTruck.from_json(entry)
             food_trucks.append(food_truck)
+
         return food_trucks
     else:
-        raise RuntimeError(f'GET request for {datasf_mobile_food_schedule_url} responded \
+        raise Exception(f'GET request for {datasf_mobile_food_schedule_url} responded \
                       with status code {mobile_food_schedule_response.status_code}.')
 
 
@@ -92,7 +123,5 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    # Parse command line arguments.
-
     main()
         
