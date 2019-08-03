@@ -117,8 +117,9 @@ def main() -> None:
         print(open_food_trucks[current_food_truck_index])
         current_food_truck_index += 1
 
-        # After 10 food trucks are printed, block until the user presses Enter.
-        if current_food_truck_index % 10 == 0:
+        # After 10 food trucks are printed, block until the user presses 
+        # Enter (unless there are no more food trucks).
+        if current_food_truck_index % 10 == 0 and current_food_truck_index != len(open_food_trucks):
             input('Press Enter to view more food trucks...')
 
 
