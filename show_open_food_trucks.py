@@ -30,14 +30,14 @@ class FoodTruck:
         :return: A FoodTruck if the specified JSON object is well-formed; otherwise, None.
         """
         # Get all fields from the input JSON.
-        address = json['location']
-        foodTruckName = json['applicant']
-        dayOfWeek = json['dayofweekstr']
-        openTime = json['start24']
-        closeTime = json['end24']
+        address = json.get('location')
+        foodTruckName = json.get('applicant')
+        dayOfWeek = json.get('dayofweekstr')
+        openTime = json.get('start24')
+        closeTime = json.get('end24')
         return cls(address, foodTruckName, dayOfWeek, openTime, closeTime)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Returns the string representation of this food truck.
         """
@@ -90,7 +90,7 @@ def get_food_trucks() -> List[FoodTruck]:
 
 def main() -> None:
     """
-    The entry point of the program if this module is executed.
+    The entry point of the program.
     """
     try:
         # Load ALL food trucks.
@@ -100,8 +100,10 @@ def main() -> None:
         sys.exit(1)
    
     # Get all food trucks that are open at the current time.
+    # NOTE: perform tests by changing current_time to the desired time like:
+    # datetime.strptime('Monday 08:50', '%A %H:%M').
     current_time = datetime.now()
-    open_food_trucks = [f for f in food_trucks if f.is_open(current_time)]
+    open_food_trucks = [f for f in food_trucks if f and f.is_open(current_time)]
 
     # Handle the case where there are no open food trucks.
     if len(open_food_trucks) == 0:
@@ -118,7 +120,7 @@ def main() -> None:
         current_food_truck_index += 1
 
         # After 10 food trucks are printed, block until the user presses 
-        # Enter (unless there are no more food trucks).
+        # the Enter key (unless there are no more food trucks).
         if current_food_truck_index % 10 == 0 and current_food_truck_index != len(open_food_trucks):
             input('Press Enter to view more food trucks...')
 
